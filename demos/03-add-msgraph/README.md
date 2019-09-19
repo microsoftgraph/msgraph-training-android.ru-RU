@@ -36,6 +36,12 @@
 
     ![Снимок экрана со страницей URI перенаправления](../../tutorial/images/aad-redirect-uris.png)
 
+## <a name="configure-the-sample"></a>Настройка примера
+
+1. Переименуйте `oauth_strings.xml.example` файл `oauth_strings.xml` и переместите его в `GraphTutorial/app/src/main/res/values` каталог.
+1. Измените `oauth_strings.xml` файл и внесите следующие изменения.
+    1. Замените `YOUR_APP_ID_HERE` **идентификатором приложения** , полученным с портала Azure.
+
 ## <a name="run-the-sample"></a>Запуск приложения
 
 В Android Studio выберите пункт **запустить приложение "** в меню" **выполнить** ".
