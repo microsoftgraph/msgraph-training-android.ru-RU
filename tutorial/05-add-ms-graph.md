@@ -59,7 +59,7 @@
     import com.microsoft.graph.models.extensions.Event;
     import com.microsoft.graph.requests.extensions.IEventCollectionPage;
     import com.microsoft.identity.client.AuthenticationCallback;
-    import com.microsoft.identity.client.AuthenticationResult;
+    import com.microsoft.identity.client.IAuthenticationResult;
     import com.microsoft.identity.client.exception.MsalException;
     import java.util.List;
     ```
@@ -114,7 +114,7 @@
     }
     ```
 
-1. Переопределите `onCreate` функцию в `GraphHelper` классе, чтобы получить события пользователя из Microsoft Graph.
+1. Переопределите `onCreate` функцию в `CalendarFragment` классе, чтобы получить события пользователя из Microsoft Graph.
 
     ```java
     @Override
@@ -128,7 +128,7 @@
         AuthenticationHelper.getInstance()
                 .acquireTokenSilently(new AuthenticationCallback() {
                     @Override
-                    public void onSuccess(AuthenticationResult authenticationResult) {
+                    public void onSuccess(IAuthenticationResult authenticationResult) {
                         final GraphHelper graphHelper = GraphHelper.getInstance();
 
                         // Get the user's events
@@ -154,13 +154,13 @@
 
 После получения маркера код вызывает `getEvents` метод, чтобы получить события пользователя.
 
-Теперь вы можете запустить приложение, войти и нажать в меню элемент Навигация **** по календарю. В журнале отладки в Android Studio должен появиться дамп JSON событий.
+Теперь вы можете запустить приложение, войти и нажать в меню элемент Навигация по **календарю** . В журнале отладки в Android Studio должен появиться дамп JSON событий.
 
 ## <a name="display-the-results"></a>Отображение результатов
 
 Теперь вы можете заменить дамп JSON на какой-то способ отобразить результаты в удобном для пользователя виде. В `ListView` этом разделе добавляется к фрагменту календаря, создается макет для каждого элемента в `ListView`, и создается настраиваемый адаптер списка для `ListView` сопоставления полей `Event` `TextView` в представлении.
 
-1. Замените `TextView` в **app/res/layout/фрагмент_календар. XML** на `ListView`.
+1. Замените элемент `TextView` **app/res/layout/fragment_calendar. XML** на `ListView`.
 
     ```xml
     <ListView
@@ -175,7 +175,7 @@
 
 1. Присвойте файлу `event_list_item`имя, измените **корневой элемент** на `RelativeLayout`, а затем нажмите кнопку **ОК**.
 
-1. Откройте файл **евент_лист_итем. XML** и замените его содержимое на приведенный ниже код.
+1. Откройте файл **event_list_item. XML** и замените его содержимое приведенным ниже параметром.
 
     ```xml
     <?xml version="1.0" encoding="utf-8"?>
@@ -249,16 +249,14 @@
     package com.example.graphtutorial;
 
     import android.content.Context;
-    import android.support.annotation.NonNull;
     import android.view.LayoutInflater;
     import android.view.View;
     import android.view.ViewGroup;
     import android.widget.ArrayAdapter;
     import android.widget.TextView;
-
+    import androidx.annotation.NonNull;
     import com.microsoft.graph.models.extensions.DateTimeTimeZone;
     import com.microsoft.graph.models.extensions.Event;
-
     import java.time.LocalDateTime;
     import java.time.ZoneId;
     import java.time.ZonedDateTime;
@@ -356,6 +354,6 @@
     addEventsToList();
     ```
 
-1. Запустите приложение, войдите в систему и нажмите элемент навигации **** по календарю. Вы должны увидеть список событий.
+1. Запустите приложение, войдите в систему и нажмите элемент навигации по **календарю** . Вы должны увидеть список событий.
 
     ![Снимок экрана с таблицей событий](./images/calendar-list.png)
