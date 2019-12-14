@@ -258,7 +258,7 @@
     ```
 
     > [!NOTE]
-    > Обратите внимание `signIn` , что метод сначала проверяет, существует ли уже в кэше MSAL учетная запись пользователя. В противном случае он пытается обновить свои маркеры без уведомления, избегая необходимости запрашивать пользователя каждый раз при запуске приложения.
+    > Обратите внимание `signIn` , что метод выполняет автоматический вход (через `doSilentSignIn`). При обратном вызове этого метода выполняется интерактивный вход в случае сбоя. Это позволяет избежать необходимости запрашивать пользователя каждый раз при запуске приложения.
 
 1. Сохраните изменения и запустите приложение.
 
@@ -396,7 +396,7 @@
 
     ```java
     @Override
-    public void onSuccess(AuthenticationResult authenticationResult) {
+    public void onSuccess(IAuthenticationResult authenticationResult) {
         // Log the token for debug purposes
         String accessToken = authenticationResult.getAccessToken();
         Log.d("AUTH", String.format("Access token: %s", accessToken));
