@@ -5,7 +5,7 @@
 > [!TIP]
 > Если вы предпочитаете просто скачать заполненный учебник, вы можете скачать или клонировать [репозиторий GitHub](https://github.com/microsoftgraph/msgraph-training-android).
 
-## <a name="prerequisites"></a>Необходимые компоненты
+## <a name="prerequisites"></a>Предварительные требования
 
 Прежде чем приступить к работе с этим руководством, на компьютере для разработки должен быть установлен [Android Studio](https://developer.android.com/studio/) .
 
