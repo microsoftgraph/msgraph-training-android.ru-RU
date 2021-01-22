@@ -1,102 +1,85 @@
 <!-- markdownlint-disable MD002 MD041 -->
 
-В этом упражнении вы добавите Microsoft Graph в приложение. Для этого приложения вы будете использовать [пакет SDK Microsoft Graph для Java](https://github.com/microsoftgraph/msgraph-sdk-java) , чтобы совершать вызовы в Microsoft Graph.
+В этом упражнении вы включаете Microsoft Graph в приложение. Для этого приложения вы будете использовать [microsoft Graph SDK для Java](https://github.com/microsoftgraph/msgraph-sdk-java) для вызова Microsoft Graph.
 
-## <a name="get-calendar-events-from-outlook"></a>Получение событий календаря из Outlook
+## <a name="get-calendar-events-from-outlook"></a>Получить события календаря из Outlook
 
-В этом разделе описывается расширение `GraphHelper` класса для добавления функции, позволяющей получить события и обновление `CalendarFragment` , чтобы использовать эти новые функции.
+В этом разделе мы расширим класс, чтобы добавить функцию для получения событий пользователя за текущую неделю, и обновим, чтобы `GraphHelper` `CalendarFragment` использовать эти новые функции.
 
-1. Откройте файл **графхелпер** и добавьте приведенные ниже `import` операторы в начало файла.
+1. Откройте **GraphHelper** и добавьте следующие утверждения в `import` верхнюю часть файла.
 
     ```java
     import com.microsoft.graph.options.Option;
+    import com.microsoft.graph.options.HeaderOption;
     import com.microsoft.graph.options.QueryOption;
     import com.microsoft.graph.requests.extensions.IEventCollectionPage;
+    import com.microsoft.graph.requests.extensions.IEventCollectionRequestBuilder;
+    import java.time.ZonedDateTime;
+    import java.time.format.DateTimeFormatter;
     import java.util.LinkedList;
     import java.util.List;
     ```
 
-1. Добавьте в `GraphHelper` класс следующие функции.
+1. Добавьте в класс следующие `GraphHelper` функции.
 
-    ```java
-    public void getEvents(String accessToken, ICallback<IEventCollectionPage> callback) {
-        mAccessToken = accessToken;
-
-        // Use query options to sort by created time
-        final List<Option> options = new LinkedList<Option>();
-        options.add(new QueryOption("orderby", "createdDateTime DESC"));
-
-
-        // GET /me/events
-        mClient.me().events().buildRequest(options)
-                .select("subject,organizer,start,end")
-                .get(callback);
-
-    }
-
-    // Debug function to get the JSON representation of a Graph
-    // object
-    public String serializeObject(Object object) {
-        return mClient.getSerializer().serializeObject(object);
-    }
-    ```
+    :::code language="java" source="../demo/GraphTutorial/app/src/main/java/com/example/graphtutorial/GraphHelper.java" id="GetEventsSnippet":::
 
     > [!NOTE]
-    > Рассмотрите, какие действия `getEvents` выполняет код.
+    > Подумайте, что делает `getCalendarView` код.
     >
-    > - URL-адрес, который будет вызываться — это `/v1.0/me/events`.
-    > - `select` Функция ограничит поля, возвращаемые для каждого события, только теми, которые будут реально использоваться в представлении.
-    > - `QueryOption` Имя `orderby` используется для сортировки результатов по дате и времени создания, начиная с самого последнего элемента.
+    > - Будет вызван URL-адрес `/v1.0/me/calendarview` .
+    >   - Параметры `startDateTime` `endDateTime` и параметры запроса определяют начало и конец представления календаря.
+    >   - Заглавная запись заставляет Microsoft Graph возвращать время начала и окончания каждого события в `Prefer: outlook.timezone` часовом поясе пользователя.
+    >   - Функция `select` ограничивает поля, возвращаемые для каждого события, только теми, которые будут фактически использовать представление.
+    >   - Функция `orderby` сортировать результаты по времени начала.
+    >   - Функция `top` запрашивает 25 результатов на страницу.
+    > - Определена возможность вызова ( ) для проверки на наличии дополнительных результатов и запроса `pagingCallback` дополнительных страниц при необходимости.
 
-1. Добавьте приведенные `import` ниже операторы в начало файла **календарфрагмент** .
+1. Щелкните правой кнопкой мыши папку **app/java/com.example.graphtutorial** и выберите **"Новый",** затем **"Класс Java".** Назовем класс `GraphToIana` и выберите **"ОК".**
+
+1. Откройте новый файл и замените его содержимое следующим:
+
+    :::code language="java" source="../demo/GraphTutorial/app/src/main/java/com/example/graphtutorial/GraphToIana.java" id="GraphToIanaSnippet":::
+
+1. Добавьте следующие утверждения в верхнюю часть файла `import` **CalendarFragment.**
 
     ```java
     import android.util.Log;
     import android.widget.ListView;
-    import android.widget.ProgressBar;
+    import com.google.android.material.snackbar.BaseTransientBottomBar;
+    import com.google.android.material.snackbar.Snackbar;
     import com.microsoft.graph.concurrency.ICallback;
     import com.microsoft.graph.core.ClientException;
     import com.microsoft.graph.models.extensions.Event;
-    import com.microsoft.graph.requests.extensions.IEventCollectionPage;
     import com.microsoft.identity.client.AuthenticationCallback;
     import com.microsoft.identity.client.IAuthenticationResult;
     import com.microsoft.identity.client.exception.MsalException;
+    import java.time.DayOfWeek;
+    import java.time.ZoneId;
+    import java.time.ZonedDateTime;
+    import java.time.temporal.ChronoUnit;
+    import java.time.temporal.TemporalAdjusters;
     import java.util.List;
     ```
 
-1. Добавьте в `CalendarFragment` класс следующие элементы.
+1. Добавьте в класс следующий `CalendarFragment` член.
 
     ```java
     private List<Event> mEventList = null;
-    private ProgressBar mProgress = null;
     ```
 
-1. Добавьте следующие функции в `CalendarFragment` класс для скрытия и отображения индикатора выполнения, а также для предоставления обратного вызова для `getEvents` функции в. `GraphHelper`
+1. Добавьте в класс следующие `CalendarFragment` функции, чтобы скрыть и показать ход выполнения.
+
+    :::code language="java" source="../demo/GraphTutorial/app/src/main/java/com/example/graphtutorial/CalendarFragment.java" id="ProgressBarSnippet":::
+
+1. Добавьте следующую функцию для предоставления функции в качестве `getCalendarView` функции. `GraphHelper`
 
     ```java
-    private void showProgressBar() {
-        getActivity().runOnUiThread(new Runnable() {
+    private ICallback<List<Event>> getCalendarViewCallback() {
+        return new ICallback<List<Event>>() {
             @Override
-            public void run() {
-                mProgress.setVisibility(View.VISIBLE);
-            }
-        });
-    }
-
-    private void hideProgressBar() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mProgress.setVisibility(View.GONE);
-            }
-        });
-    }
-
-    private ICallback<IEventCollectionPage> getEventsCallback() {
-        return new ICallback<IEventCollectionPage>() {
-            @Override
-            public void success(IEventCollectionPage iEventCollectionPage) {
-                mEventList = iEventCollectionPage.getCurrentPage();
+            public void success(List<Event> eventList) {
+                mEventList = eventList;
 
                 // Temporary for debugging
                 String jsonEvents = GraphHelper.getInstance().serializeObject(mEventList);
@@ -107,253 +90,58 @@
 
             @Override
             public void failure(ClientException ex) {
-                Log.e("GRAPH", "Error getting events", ex);
                 hideProgressBar();
+                Log.e("GRAPH", "Error getting events", ex);
+                Snackbar.make(getView(),
+                    ex.getMessage(),
+                    BaseTransientBottomBar.LENGTH_LONG).show();
             }
         };
     }
     ```
 
-1. Переопределите `onCreate` функцию в `CalendarFragment` классе, чтобы получить события пользователя из Microsoft Graph.
+1. Замените `onCreateView` существующую функцию `CalendarFragment` в классе на следующую.
 
-    ```java
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    :::code language="java" source="../demo/GraphTutorial/app/src/main/java/com/example/graphtutorial/CalendarFragment.java" id="OnCreateViewSnippet":::
 
-        mProgress = getActivity().findViewById(R.id.progressbar);
-        showProgressBar();
+    Обратите внимание, что делает этот код. Сначала он `acquireTokenSilently` вызывается для получения маркера доступа. Вызывать этот метод каждый раз, когда требуется маркер доступа, является оптимальным методом, так как он зовется преимуществами возможностей кэшинга и обновления маркеров MSAL. Внутри msAL проверяет наличие кэшного маркера, а затем проверяет, истек ли срок его действия. Если маркер присутствует, а срок действия не истек, он просто возвращает кэшный маркер. Если срок действия истек, он пытается обновить маркер перед его возвратом.
 
-        // Get a current access token
-        AuthenticationHelper.getInstance()
-                .acquireTokenSilently(new AuthenticationCallback() {
-                    @Override
-                    public void onSuccess(IAuthenticationResult authenticationResult) {
-                        final GraphHelper graphHelper = GraphHelper.getInstance();
+    После получения маркера код вызывает метод для `getCalendarView` получения событий пользователя.
 
-                        // Get the user's events
-                        graphHelper.getEvents(authenticationResult.getAccessToken(),
-                                getEventsCallback());
-                    }
-
-                    @Override
-                    public void onError(MsalException exception) {
-                        Log.e("AUTH", "Could not get token silently", exception);
-                        hideProgressBar();
-                    }
-
-                    @Override
-                    public void onCancel() {
-                        hideProgressBar();
-                    }
-                });
-    }
-    ```
-
-Обратите внимание на то, что делает этот код. Сначала он вызывает метод `acquireTokenSilently` Get для получения маркера доступа. Каждый раз, когда необходим маркер доступа, рекомендуется вызывать этот метод, так как он использует преимущества кэширования MSAL и возможности обновления маркеров. MSAL проверяет наличие кэшированного маркера, а затем проверяет его срок действия. Если маркер присутствует, а срок его действия не истек, он просто возвращает кэшированный маркер. Если срок действия истек, он пытается обновить маркер перед его возвратом.
-
-После получения маркера код вызывает `getEvents` метод, чтобы получить события пользователя.
-
-Теперь вы можете запустить приложение, войти и нажать в меню элемент Навигация по **календарю** . В журнале отладки в Android Studio должен появиться дамп JSON событий.
+1. Запустите приложение, во войти  и коснитесь элемента навигации "Календарь" в меню. Вы должны увидеть дамп JSON событий в журнале отлаживки в Android Studio.
 
 ## <a name="display-the-results"></a>Отображение результатов
 
-Теперь вы можете заменить дамп JSON на какой-то способ отобразить результаты в удобном для пользователя виде. В `ListView` этом разделе добавляется к фрагменту календаря, создается макет для каждого элемента в `ListView`, и создается настраиваемый адаптер списка для `ListView` сопоставления полей `Event` `TextView` в представлении.
+Теперь вы можете заменить дамп JSON на что-то, чтобы отобразить результаты в удобном для пользователя виде. В этом разделе вы добавим a к фрагменту календаря, создайте макет для каждого элемента в элементе и создайте настраиваемый адаптер списка для того, чтобы сопостереть поля каждого из них с соответствующими в `ListView` `ListView` `ListView` `Event` `TextView` представлении.
 
-1. Замените элемент `TextView` **app/res/layout/fragment_calendar. XML** на `ListView`.
+1. Замените `TextView` в **app/res/layout/fragment_calendar.xml** на `ListView` .
 
-    ```xml
-    <ListView
-        android:id="@+id/eventlist"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:divider="@color/colorPrimary"
-        android:dividerHeight="1dp" />
-    ```
+    :::code language="xml" source="../demo/GraphTutorial/app/src/main/res/layout/fragment_calendar.xml" highlight="6-11":::
 
-1. Щелкните правой кнопкой мыши папку **app/res/layout** и выберите **создать**, затем **файл ресурсов макета**.
+1. Щелкните правой кнопкой мыши папку **app/res/layout** и выберите **"Новый"** и "Файл ресурсов **макета".**
 
-1. Присвойте файлу `event_list_item`имя, измените **корневой элемент** на `RelativeLayout`, а затем нажмите кнопку **ОК**.
+1. Применив имя `event_list_item` файла, измените **корневой элемент** на `RelativeLayout` "ОК" и выберите **"ОК".**
 
-1. Откройте файл **event_list_item. XML** и замените его содержимое приведенным ниже параметром.
+1. Откройте **event_list_item.xml** файла и замените его содержимое на следующее.
 
-    ```xml
-    <?xml version="1.0" encoding="utf-8"?>
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="10dp">
+    :::code language="xml" source="../demo/GraphTutorial/app/src/main/res/layout/event_list_item.xml":::
 
-        <TextView
-            android:id="@+id/eventsubject"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Subject"
-            android:textSize="20sp" />
+1. Щелкните правой кнопкой мыши папку **app/java/com.example.graphtutorial** и выберите **"Новый",** затем **"Класс Java".**
 
-        <TextView
-            android:id="@+id/eventorganizer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/eventsubject"
-            android:text="Adele Vance"
-            android:textSize="15sp" />
+1. Назовем класс `EventListAdapter` и выберите **"ОК".**
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/eventorganizer"
-            android:orientation="horizontal">
+1. Откройте файл **EventListAdapter** и замените его содержимое на следующее.
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingEnd="2sp"
-                android:text="Start:"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+    :::code language="java" source="../demo/GraphTutorial/app/src/main/java/com/example/graphtutorial/EventListAdapter.java" id="EventListAdapterSnippet":::
 
-            <TextView
-                android:id="@+id/eventstart"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="1:30 PM 2/19/2019"
-                android:textSize="15sp" />
+1. Откройте класс **CalendarFragment** и добавьте в класс следующую функцию.
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingStart="5sp"
-                android:paddingEnd="2sp"
-                android:text="End:"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+    :::code language="java" source="../demo/GraphTutorial/app/src/main/java/com/example/graphtutorial/CalendarFragment.java" id="AddEventsToListSnippet":::
 
-            <TextView
-                android:id="@+id/eventend"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="1:30 PM 2/19/2019"
-                android:textSize="15sp" />
-        </LinearLayout>
-    </RelativeLayout>
-    ```
+1. Замените временный код отладки из `success` переопределения на `addEventsToList();` .
 
-1. Щелкните правой кнопкой мыши папку **app/Java/com. example. графтуториал** и выберите команду **создать**, а затем — **класс Java**.
+    :::code language="java" source="../demo/GraphTutorial/app/src/main/java/com/example/graphtutorial/CalendarFragment.java" id="SuccessSnippet" highlight="5":::
 
-1. Назовите класс `EventListAdapter` и нажмите **кнопку ОК**.
-
-1. Откройте файл **евентлистадаптер** и замените его содержимое на приведенный ниже код.
-
-    ```java
-    package com.example.graphtutorial;
-
-    import android.content.Context;
-    import android.view.LayoutInflater;
-    import android.view.View;
-    import android.view.ViewGroup;
-    import android.widget.ArrayAdapter;
-    import android.widget.TextView;
-    import androidx.annotation.NonNull;
-    import com.microsoft.graph.models.extensions.DateTimeTimeZone;
-    import com.microsoft.graph.models.extensions.Event;
-    import java.time.LocalDateTime;
-    import java.time.ZoneId;
-    import java.time.ZonedDateTime;
-    import java.time.format.DateTimeFormatter;
-    import java.time.format.FormatStyle;
-    import java.util.List;
-    import java.util.TimeZone;
-
-    public class EventListAdapter extends ArrayAdapter<Event> {
-        private Context mContext;
-        private int mResource;
-        private ZoneId mLocalTimeZoneId;
-
-        // Used for the ViewHolder pattern
-        // https://developer.android.com/training/improving-layouts/smooth-scrolling
-        static class ViewHolder {
-            TextView subject;
-            TextView organizer;
-            TextView start;
-            TextView end;
-        }
-
-        public EventListAdapter(Context context, int resource, List<Event> events) {
-            super(context, resource, events);
-            mContext = context;
-            mResource = resource;
-            mLocalTimeZoneId = TimeZone.getDefault().toZoneId();
-        }
-
-        @NonNull
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            Event event = getItem(position);
-
-            ViewHolder holder;
-
-            if (convertView == null) {
-                LayoutInflater inflater = LayoutInflater.from(mContext);
-                convertView = inflater.inflate(mResource, parent, false);
-
-                holder = new ViewHolder();
-                holder.subject = convertView.findViewById(R.id.eventsubject);
-                holder.organizer = convertView.findViewById(R.id.eventorganizer);
-                holder.start = convertView.findViewById(R.id.eventstart);
-                holder.end = convertView.findViewById(R.id.eventend);
-
-                convertView.setTag(holder);
-            } else {
-                holder = (ViewHolder) convertView.getTag();
-            }
-
-            holder.subject.setText(event.subject);
-            holder.organizer.setText(event.organizer.emailAddress.name);
-            holder.start.setText(getLocalDateTimeString(event.start));
-            holder.end.setText(getLocalDateTimeString(event.end));
-
-            return convertView;
-        }
-
-        // Convert Graph's DateTimeTimeZone format to
-        // a LocalDateTime, then return a formatted string
-        private String getLocalDateTimeString(DateTimeTimeZone dateTime) {
-            ZonedDateTime localDateTime = LocalDateTime.parse(dateTime.dateTime)
-                    .atZone(ZoneId.of(dateTime.timeZone))
-                    .withZoneSameInstant(mLocalTimeZoneId);
-
-            return String.format("%s %s",
-                    localDateTime.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
-                    localDateTime.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)));
-        }
-    }
-    ```
-
-1. Откройте класс **календарфрагмент** и добавьте приведенную ниже функцию в класс.
-
-    ```java
-    private void addEventsToList() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ListView eventListView = getView().findViewById(R.id.eventlist);
-
-                EventListAdapter listAdapter = new EventListAdapter(getActivity(),
-                        R.layout.event_list_item, mEventList);
-
-                eventListView.setAdapter(listAdapter);
-            }
-        });
-    }
-    ```
-
-1. Добавьте следующую строку кода в `success` переопределение после `mEventList = iEventCollectionPage.getCurrentPage();` строки.
-
-    ```java
-    addEventsToList();
-    ```
-
-1. Запустите приложение, войдите в систему и нажмите элемент навигации по **календарю** . Вы должны увидеть список событий.
+1. Запустите приложение, во войти и коснитесь элемента навигации **"Календарь".** Должен отлиться список событий.
 
     ![Снимок экрана с таблицей событий](./images/calendar-list.png)
