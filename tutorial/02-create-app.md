@@ -2,42 +2,42 @@
 
 Начните с создания нового проекта Android Studio.
 
-1. Откройте Android Studio и выберите **"Запустить новый проект Android Studio"** на экране приветствия.
+1. Откройте Android Studio и **выберите запуск нового проекта Android Studio** на экране приветствия.
 
-1. В **диалоговом окте "Создание нового** проекта" выберите **"Пустое действие",** а затем выберите **"Далее".**
+1. В **диалоговом окте Create New Project** выберите **Пустое действие,** а затем выберите **Далее**.
 
-    ![Снимок экрана: диалоговое окно "Создание нового проекта" в Android Studio](./images/choose-project.png)
+    ![Снимок экрана диалоговое окно Create New Project в Android Studio](./images/choose-project.png)
 
-1. В **диалоговом окке** "Настройка проекта" установите имя, убедитесь, что для поля "Язык" установлено поле , и убедитесь, что установлен минимальный уровень  `Graph Tutorial`  `Java` **API.** `API 29: Android 10.0 (Q)` При необходимости **измените имя пакета** **и расположение сохранения.** Нажмите кнопку **Готово**.
+1. В **диалоговом окте** "Настройка проекта" за установите имя, убедитесь, что поле Language установлено, и убедитесь, что минимальный уровень  `Graph Tutorial`  `Java` **API** `API 29: Android 10.0 (Q)` установлен. Измените **имя пакета и** **сохраните расположение по** мере необходимости. Нажмите кнопку **Готово**.
 
-    ![Снимок экрана: диалоговое окно "Настройка проекта"](./images/configure-project.png)
+    ![Снимок экрана диалоговой реализации проекта](./images/configure-project.png)
 
 > [!IMPORTANT]
-> В коде и инструкциях в этом руководстве используется имя пакета **com.example.graphtutorial.** Если при создании проекта используется другое имя пакета, обязательно используйте имя пакета, где бы вы ни видели это значение.
+> Код и инструкции в этом учебнике используют имя пакета **com.example.graphtutorial**. Если при создании проекта используется другое имя пакета, обязательно используйте свое имя пакета, где бы вы ни увидели это значение.
 
 ## <a name="install-dependencies"></a>Установка зависимостей
 
-Прежде чем двигаться дальше, установите некоторые дополнительные зависимости, которые вы будете использовать позже.
+Прежде чем двигаться дальше, установите дополнительные зависимости, которые вы будете использовать позже.
 
 - `com.google.android.material:material` чтобы сделать [представление навигации](https://material.io/develop/android/components/navigation-view/) доступным для приложения.
-- [Библиотека проверки подлинности Майкрософт (MSAL) для Android](https://github.com/AzureAD/microsoft-authentication-library-for-android) для обработки проверки подлинности Azure AD и управления маркерами.
-- [Microsoft Graph SDK для Java](https://github.com/microsoftgraph/msgraph-sdk-java) для вызовов Microsoft Graph.
+- [Microsoft Authentication Library (MSAL)](https://github.com/AzureAD/microsoft-authentication-library-for-android) для Android для обработки проверки подлинности Azure AD и управления маркерами.
+- [Microsoft Graph SDK для Java](https://github.com/microsoftgraph/msgraph-sdk-java) для звонков в Microsoft Graph.
 
-1. **Разкройте скрипты Gradle,** а затем откройте **build.gradle (Модуль: Graph_Tutorial.app).**
+1. **Расширйте скрипты Gradle,** затем откройте **build.gradle (Модуль: Graph_Tutorial.app).**
 
-1. Добавьте следующие строки в `dependencies` значение.
+1. Добавьте в значение следующие `dependencies` строки.
 
     :::code language="gradle" source="../demo/GraphTutorial/app/build.gradle" id="DependenciesSnippet":::
 
-1. Добавьте значение `packagingOptions` в значение `android` в **build.gradle (Module: Graph_Tutorial.app).**
+1. Добавьте значение внутри значения `packagingOptions` `android` **build.gradle (Модуль: Graph_Tutorial.app).**
 
     ```Gradle
     packagingOptions {
-        pickFirst 'META-INF/jersey-module-version'
+        pickFirst 'META-INF/*'
     }
     ```
 
-1. Добавьте репозиторий Azure Maven для библиотеки MicrosoftDeviceSDK, зависимой от MSAL. Откройте **build.gradle (Project: Graph_Tutorial).** Добавьте следующее в значение `repositories` внутри `allprojects` значения.
+1. Добавьте репозиторий Azure Maven для библиотеки MicrosoftDeviceSDK, зависимой от MSAL. Откройте **build.gradle (Project: Graph_Tutorial).** Добавьте следующее значение `repositories` внутри `allprojects` значения.
 
     ```Gradle
     maven {
@@ -45,85 +45,89 @@
     }
     ```
 
-1. Сохраните изменения. В меню **"Файл"** выберите **"Синхронизировать проект с файлами Gradle".**
+1. Сохраните изменения. В меню **File** выберите **Sync Project с Gradle Files**.
 
 ## <a name="design-the-app"></a>Проектирование приложения
 
-Приложение будет использовать ящик навигации для навигации между разными представлениями. На этом этапе вы обновим действие, чтобы использовать макет навигационного ящика, и добавим фрагменты для представлений.
+Приложение будет использовать ящик навигации для перемещения между различными представлениями. На этом шаге вы обновим действие, чтобы использовать макет ящика навигации и добавьте фрагменты для представлений.
 
 ### <a name="create-a-navigation-drawer"></a>Создание ящика навигации
 
-В этом разделе вы создадим значки для меню навигации приложения, создадим меню для приложения и обновим тему и макет приложения, чтобы они были совместимы с ящиком навигации.
+В этом разделе вы создайте значки для меню навигации приложения, создайте меню для приложения и обновим тему и макет приложения, чтобы быть совместимыми с ящиком навигации.
 
 #### <a name="create-icons"></a>Создание значков
 
-1. Щелкните правой кнопкой **мыши папку app/res/drawable** и выберите **"Новый",** затем **"Векторный актив".**
+1. Щелкните правой кнопкой **мыши папку app/res/drawable** и выберите **New**, затем **Vector Asset**.
 
-1. Нажмите кнопку значка рядом с **изображением клипа.**
+1. Нажмите кнопку значок рядом с **Clip Art**.
 
-1. В **окне "Выбор значка"** введите в панели поиска значок "Главная" и `home` выберите "ОК".  
+1. В **окне Выберите значок** введите в панели поиска, а затем `home` выберите значок **Главная** и выберите **ОК.**
 
-1. Измените **имя на** `ic_menu_home` .
+1. Измените **имя** `ic_menu_home` на .
 
-    ![Снимок экрана с окном "Настройка векторного актива"](./images/create-icon.png)
+    ![Снимок экрана окна Configure Vector Asset](./images/create-icon.png)
 
-1. Выберите **"Далее",** затем **"Готово".**
+1. Выберите **Далее**, а затем **закончить**.
 
 1. Повторите предыдущий шаг, чтобы создать еще четыре значка.
 
-    - Имя: `ic_menu_calendar` , значок: `event`
-    - Имя: `ic_menu_add_event` , значок: `add box`
-    - Имя: `ic_menu_signout` , значок: `exit to app`
-    - Имя: `ic_menu_signin` , значок: `person add`
+    - Имя: `ic_menu_calendar` , Значок: `event`
+    - Имя: `ic_menu_add_event` , Значок: `add box`
+    - Имя: `ic_menu_signout` , Значок: `exit to app`
+    - Имя: `ic_menu_signin` , Значок: `person add`
 
 #### <a name="create-the-menu"></a>Создание меню
 
-1. Щелкните правой кнопкой **мыши папку res** и выберите **"Новый"** и "Каталог ресурсов **Android".**
+1. Щелкните правой кнопкой мыши **папку res** и выберите **New**, а затем **Каталог ресурсов Android**.
 
-1. Измените **тип ресурса на "ОК"** и выберите `menu` **"ОК".**
+1. Измените **тип ресурса и** выберите `menu` **ОК.**
 
-1. Щелкните правой кнопкой мыши **новую папку** меню и выберите **"Новый"** и "Файл **ресурсов меню".**
+1. Щелкните правой кнопкой мыши новую **папку меню** и выберите **Файл ресурсов** **Меню**.
 
-1. Наберем имя `drawer_menu` файла и выберите **"ОК".**
+1. Назови файл `drawer_menu` и выберите **ОК.**
 
-1. Когда файл откроется,  выберите вкладку "Код", чтобы просмотреть XML-код, а затем замените все содержимое на следующее.
+1. Когда файл откроется, выберите **вкладку Code** для просмотра XML, а затем замените все содержимое на следующее.
 
     :::code language="xml" source="../demo/GraphTutorial/app/src/main/res/menu/drawer_menu.xml":::
 
-#### <a name="update-application-theme-and-layout"></a>Обновление темы и макета приложения
+#### <a name="update-application-theme-and-layout"></a>Обновление темы и макета приложений
 
-1. Откройте **файл app/res/values/styles.xml** и замените `Theme.AppCompat.Light.DarkActionBar` на `Theme.AppCompat.Light.NoActionBar` .
-
-1. Добавьте в элемент следующие `style` строки.
+1. Откройте **файл app/res/values/themes.xml** и добавьте в элемент следующие `style` строки.
 
     ```xml
     <item name="windowActionBar">false</item>
     <item name="windowNoTitle">true</item>
-    <item name="android:statusBarColor">@android:color/transparent</item>
+    ```
+
+1. Откройте **файл app/res/values-night/themes.xml** и добавьте в элемент следующие `style` строки.
+
+    ```xml
+    <item name="windowActionBar">false</item>
+    <item name="windowNoTitle">true</item>
     ```
 
 1. Щелкните правой **кнопкой мыши папку app/res/layout.**
 
-1. Выберите **"Новый",** затем **"Файл ресурсов макета".**
+1. Выберите **новый,** затем **файл ресурсов Layout**.
 
-1. Назовем `nav_header` файл и измените **корневой элемент** на `LinearLayout` ", а затем выберите **"ОК".**
+1. Назови файл `nav_header` и измените **элемент Root на** , а затем выберите `LinearLayout` **ОК.**
 
-1. Откройте файл **nav_header.xml** и выберите вкладку **"Текст".** Замените все содержимое на следующее.
+1. Откройте файл **nav_header.xml** и выберите вкладку **Code.** Замените все содержимое следующим.
 
     :::code language="xml" source="../demo/GraphTutorial/app/src/main/res/layout/nav_header.xml":::
 
-1. Откройте файл **app/res/layout/activity_main.xml** и замените существующий XML-файл на `DrawerLayout` следующий:
+1. Откройте **файл app/res/layout/activity_main.xml** и обнови макет на макет, заменив существующий `DrawerLayout` XML следующим.
 
     :::code language="xml" source="../demo/GraphTutorial/app/src/main/res/layout/activity_main.xml":::
 
-1. Откройте **app/res/values/strings.xml** добавьте в элемент следующие `resources` элементы.
+1. Откройте **приложение/res/values/strings.xml** и добавьте в элемент следующие `resources` элементы.
 
     ```xml
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     ```
 
-1. Откройте файл **app/java/com.example/graphtutorial/MainActivity** и замените все содержимое на следующее.
+1. Откройте файл **app/java/com.example/graphtutorial/MainActivity** и замените все содержимое следующим.
 
     ```java
     package com.example.graphtutorial;
@@ -281,21 +285,21 @@
 
 ### <a name="add-fragments"></a>Добавление фрагментов
 
-В этом разделе вы создадим фрагменты для представлений дома и календаря.
+В этом разделе будут создаваться фрагменты для представлений дома и календаря.
 
-1. Щелкните правой кнопкой мыши папку **app/res/layout** и выберите **"Новый"** и "Файл ресурсов **макета".**
+1. Щелкните правой кнопкой **мыши папку app/res/layout** и выберите **файл ресурса "Новый"** и **"Макет".**
 
-1. Назовем `fragment_home` файл и измените **корневой элемент** на `RelativeLayout` ", а затем выберите **"ОК".**
+1. Назови файл `fragment_home` и измените **элемент Root на** , а затем выберите `RelativeLayout` **ОК.**
 
-1. Откройте **fragment_home.xml** файла и замените его содержимое на следующее.
+1. Откройте файл **fragment_home.xml** и замените его содержимое следующим.
 
     :::code language="xml" source="../demo/GraphTutorial/app/src/main/res/layout/fragment_home.xml":::
 
-1. Щелкните правой кнопкой мыши папку **app/res/layout** и выберите **"Новый"** и "Файл ресурсов **макета".**
+1. Щелкните правой кнопкой **мыши папку app/res/layout** и выберите **файл ресурса "Новый"** и **"Макет".**
 
-1. Назовем `fragment_calendar` файл и измените **корневой элемент** на `RelativeLayout` ", а затем выберите **"ОК".**
+1. Назови файл `fragment_calendar` и измените **элемент Root на** , а затем выберите `RelativeLayout` **ОК.**
 
-1. Откройте **fragment_calendar.xml** файла и замените его содержимое на следующее.
+1. Откройте файл **fragment_calendar.xml** и замените его содержимое следующим.
 
     ```xml
     <?xml version="1.0" encoding="utf-8"?>
@@ -313,11 +317,11 @@
     </RelativeLayout>
     ```
 
-1. Щелкните правой кнопкой мыши папку **app/res/layout** и выберите **"Новый"** и "Файл ресурсов **макета".**
+1. Щелкните правой кнопкой **мыши папку app/res/layout** и выберите **файл ресурса "Новый"** и **"Макет".**
 
-1. Назовем `fragment_new_event` файл и измените **корневой элемент** на `RelativeLayout` ", а затем выберите **"ОК".**
+1. Назови файл `fragment_new_event` и измените **элемент Root на** , а затем выберите `RelativeLayout` **ОК.**
 
-1. Откройте **fragment_new_event.xml** файла и замените его содержимое на следующее.
+1. Откройте файл **fragment_new_event.xml** и замените его содержимое следующим.
 
     ```xml
     <?xml version="1.0" encoding="utf-8"?>
@@ -335,19 +339,19 @@
     </RelativeLayout>
     ```
 
-1. Щелкните правой кнопкой мыши папку **app/java/com.example.graphtutorial** и выберите **"Новый",** затем **"Класс Java".**
+1. Щелкните правой кнопкой **мыши приложение/java/com.example.graphtutorial** папку и выберите **New**, а затем **Java Class**.
 
-1. Назовем `HomeFragment` класс, а затем выберите **"ОК".**
+1. Назови `HomeFragment` класс, а затем выберите **ОК.**
 
-1. Откройте файл **HomeFragment** и замените его содержимое следующим:
+1. Откройте файл **HomeFragment** и замените его содержимое следующим.
 
     :::code language="java" source="../demo/GraphTutorial/app/src/main/java/com/example/graphtutorial/HomeFragment.java" id="HomeSnippet":::
 
-1. Щелкните правой кнопкой мыши папку **app/java/com.example.graphtutorial** и выберите **"Новый",** затем **"Класс Java".**
+1. Щелкните правой кнопкой **мыши приложение/java/com.example.graphtutorial** папку и выберите **New**, а затем **Java Class**.
 
-1. Назовем `CalendarFragment` класс, а затем выберите **"ОК".**
+1. Назови `CalendarFragment` класс, а затем выберите **ОК.**
 
-1. Откройте файл **CalendarFragment** и замените его содержимое следующим:
+1. Откройте **файл CalendarFragment** и замените его содержимое следующим.
 
     ```java
     package com.example.graphtutorial;
@@ -393,11 +397,11 @@
     }
     ```
 
-1. Щелкните правой кнопкой мыши папку **app/java/com.example.graphtutorial** и выберите **"Новый",** затем **"Класс Java".**
+1. Щелкните правой кнопкой **мыши приложение/java/com.example.graphtutorial** папку и выберите **New**, а затем **Java Class**.
 
-1. Назовем `NewEventFragment` класс, а затем выберите **"ОК".**
+1. Назови `NewEventFragment` класс, а затем выберите **ОК.**
 
-1. Откройте файл **NewEventFragment** и замените его содержимое на следующее.
+1. Откройте файл **NewEventFragment** и замените его содержимое следующим.
 
     ```java
     package com.example.graphtutorial;
@@ -490,8 +494,8 @@
 
 1. Сохраните все изменения.
 
-1. В меню **"Выполнить"** выберите пункт **"Запустить приложение".**
+1. В меню **Run** выберите **выполнить "приложение".**
 
-Меню приложения должно работать для перемещения между двумя фрагментами и  изменения при нажатии кнопки "Войти" или  "Выйти".
+Меню приложения должно работать для перемещения между двумя фрагментами и изменения при нажатии кнопки **Вход** или **Вход.**
 
-![Снимок экрана: приложение](./images/app-screens.png)
+![Снимок экрана приложения](./images/app-screens.png)
